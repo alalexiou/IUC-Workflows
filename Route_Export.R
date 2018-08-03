@@ -7,8 +7,6 @@
 library(data.table)
 library(ggplot2)
 
-setwd("/home/alekos/Documents/BookOfMormon/")
-
 # OA - WZ data for EW
 od <- fread("data/origin_destination_2_bulk_all_tables/wf01aew_oa_v1.csv") 
 od
@@ -45,10 +43,10 @@ remove(od)
 remove(od_sub)
 
 # Routino
-setwd("/home/alekos/Documents/BookOfMormon/data/routino/")
-fileloc <- "/home/alekos/Documents/BookOfMormon/data/routino/quickest.txt"  #This is the default working directory
 
-library(doMC) # Linux and Mac OS X 
+fileloc <- "/routino/quickest.txt"  # or the default output directory
+
+library(doMC) # Linux and Mac OS X Only
 library(foreach)
 registerDoMC(26) 
 
@@ -57,10 +55,10 @@ a <- Sys.time()
 
 foreach(i=1:nrow(od_manch)) %dopar% {
   tryCatch({
-  router <- paste0("router --transport=motorcar --prefix=gb2 --quickest --oneway=0 --turns=0 --quiet --exact-nodes-only --lon1=", 
+  router <- paste0("router --transport=motorcar --prefix=gb2 --quickest --oneway=1 --turns=0 --quiet --exact-nodes-only --lon1=", 
                    od_manch$Or_OA_x[i], " --lat1=", od_manch$Or_OA_y[i], " --lon2=", od_manch$De_Wz_x[i], " --lat2=", od_manch$De_Wz_y[i], 
-                  " --output-text --dir=/home/alekos/Routino-3.2/routino-3.2",
-                  " --translations=/home/alekos/Routino-3.2/routino-3.2/xml/routino-translations.xml --profiles=/home/alekos/Routino-3.2/routino-3.2/xml/routino-profiles.xml")
+                  " --output-text --dir=Routino-3.2/routino-3.2",
+                  " --translations=/Routino-3.2/routino-3.2/xml/routino-translations.xml --profiles=Routino-3.2/routino-3.2/xml/routino-profiles.xml")
   
   system(router, wait = T)  # Send the routing command
   # Rename file
@@ -76,4 +74,4 @@ route_fail <- .Last.value
 b <- Sys.time()
 b-a
 
-# stopCluster(cl)
+# stopCluster
