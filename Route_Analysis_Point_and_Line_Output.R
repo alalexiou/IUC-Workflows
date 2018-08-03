@@ -10,7 +10,7 @@ library(sp)
 ############################################
 
 # Read list of routino txt files
-route_files <- dir(path = "/home/alekos/Documents/BookOfMormon/data/routino", pattern = "txt", full.names = TRUE, ignore.case = TRUE)
+route_files <- dir(path = "/routino", pattern = "txt", full.names = TRUE, ignore.case = TRUE)
 
 # Test
 length(route_files)
@@ -25,20 +25,13 @@ df <- data.table(Longitude = 0, Latitude = 0, Origin = 0, Destination = 0, Perso
   
 for(i in 1:length(route_files)) {
 
-  # Get lat long (ps: they are reversed!)
+  # Get lat long
   temp_file <- read.delim(route_files[i], header = F, sep = "\t", skip = 6, colClasses = "character")[, 1:2]
   temp_file <- as.data.table(sapply(temp_file, as.numeric))
   temp_file <- na.omit(temp_file)
   colnames(temp_file)[1:2] <- c("Longitude", "Latitude")
   
-  # each code is 9 characters long, 27 total
-  temp_file$Origin  <- substr(route_files[i], nchar(route_files[i])-26, nchar(route_files[i])-18)
-  temp_file$Destination <- substr(route_files[i], nchar(route_files[i])-16, nchar(route_files[i])-8)
-  temp_file$Persons <- as.numeric(substr(route_files[i], nchar(route_files[i])-6, nchar(route_files[i])-4))
-
-  
   df <- rbind(df, temp_file)
-  print(i)
 }
 
 # Safekeeping
@@ -53,13 +46,12 @@ df <- merge(df, unique(nspl[, 3:4]), by.x = "Origin", by.y = "oa11", all.x = T)
 
 # Append sales / penetration data
 df <- merge(df, sales_iuc[, c(-2, -4)], by.x = "lsoa11", by.y = "LSOA11_CD", all.x = T)
-df$Flow_Rate <- df$Persons * df$Sale_Rate
 
 # Test
 table(is.na(df$LSOA11_NM))
 
 # Aggregate segments
-df_pen <- as.data.table(aggregate(cbind(Persons, Flow_Rate) ~ Latitude + Longitude, data = df, FUN = "sum"))
+df_pen <- as.data.table(aggregate(Persons ~ Latitude + Longitude, data = df, FUN = "sum"))
 df_pen
 
 # Safekeeping
@@ -81,13 +73,11 @@ points@data$Latitude <- NULL
 points@data$Longitude <- NULL
 
 # Write output shp
-writeOGR(points, "/home/alekos/Documents/BookOfMormon/outputs", "IUC_Flows_GManchester_Points", driver = "ESRI Shapefile", overwrite_layer = T)
+writeOGR(points, "/outputs", "IUC_Flows_GManchester_Points", driver = "ESRI Shapefile", overwrite_layer = T)
 
 ### OUTPUT LINES ###
 
 roads <- readOGR("outputs", "osm_roads_gmanch")
-# roads <- readOGR("outputs", "test_roads")
-str(roads@data)
 roads@data <- roads@data[, c(1,3,4)]
 proj4string(roads) <- CRS("+init=epsg:4326")
 
@@ -123,4 +113,4 @@ hist(roads@data$Flow_Rate, breaks = 1000, xlim = c(0, 300), ylim = c(0,2000))
 # plot(rbuffer, add = T)
 
 # Write output shp
-writeOGR(roads, "/home/alekos/Documents/BookOfMormon/outputs", "IUC_Flows_GManchester", driver = "ESRI Shapefile", overwrite_layer = T)
+writeOGR(roads, "/outputs", "IUC_Flows_GManchester", driver = "ESRI Shapefile", overwrite_layer = T)
